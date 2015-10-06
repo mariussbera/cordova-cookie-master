@@ -13,6 +13,8 @@ import org.apache.http.cookie.Cookie;
 import org.json.JSONStringer;
 
 import java.net.HttpCookie;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Iterator;
 
 import android.webkit.CookieManager;
@@ -69,6 +71,11 @@ public class CookieMaster extends CordovaPlugin {
                public void run() {
 
                    Iterator<String> keys = jsonCookies.keys();
+                   Date now = new Date();
+                   Calendar expiry = Calendar.getInstance();
+                   expiry.setTime(now);
+                   expiry.add(Calendar.MONTH, 3);
+
                    try {
                        while (keys.hasNext()) {
                            String key = keys.next();
@@ -78,6 +85,7 @@ public class CookieMaster extends CordovaPlugin {
                            HttpCookie cookie = new HttpCookie(key, cookieValue);
 
                            String cookieString = cookie.toString().replace("\"", "");
+                           cookieString += ";expires="+expiry.getTime().toGMTString();
                            CookieManager cookieManager = CookieManager.getInstance();
                            cookieManager.setCookie(url, cookieString);
                        }

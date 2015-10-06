@@ -32,7 +32,7 @@
        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingPrettyPrinted error:nil];
 
        NSString* jsonString=[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-       
+
        if (jsonString != nil) {
            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:jsonString];
        } else {
@@ -54,27 +54,35 @@
    NSDictionary* jsonCookies = [command.arguments objectAtIndex:1];
 
     NSEnumerator *enumerator = [jsonCookies keyEnumerator];
+    NSCalendar *cal = [NSCalendar currentCalendar];
+    NSArray* cookies;
+    NSMutableDictionary *cookieProperties;
+
+    NSHTTPCookie *cookie;
+    NSHTTPCookieStorage *storage = [NSHTTPCookieStorage sharedHTTPCookieStorage];
+    NSURL *url = [[NSURL alloc] initWithString:urlString];
+    NSDate *expiry = [cal dateByAddingUnit:NSCalendarUnitMonth value:3 toDate:[NSDate date] options:0];
     id key;
 
     while ((key = [enumerator nextObject])) {
 
-        NSMutableDictionary *cookieProperties = [NSMutableDictionary dictionary];
+        cookieProperties = [NSMutableDictionary dictionary];
         [cookieProperties setObject:key forKey:NSHTTPCookieName];
+        [cookieProperties setObject:jsonCookies[key] forKey:NSHTTPCookieValue];
         [cookieProperties setObject:urlString forKey:NSHTTPCookieOriginURL];
         [cookieProperties setObject:@"/" forKey:NSHTTPCookiePath];
+        [cookieProperties setObject:expiry forKey:NSHTTPCookieExpires   ];
 
-        NSHTTPCookie *cookie = [NSHTTPCookie cookieWithProperties:cookieProperties];
+        cookie = [NSHTTPCookie cookieWithProperties:cookieProperties];
+        [storage setCookie:cookie];
 
-        [[NSHTTPCookieStorage sharedHTTPCookieStorage] setCookie:cookie];
-
-        NSArray* cookies = [NSArray arrayWithObjects:cookie, nil];
-
-        NSURL *url = [[NSURL alloc] initWithString:urlString];
-        [[NSHTTPCookieStorage sharedHTTPCookieStorage] setCookies:cookies forURL:url mainDocumentURL:nil];
     }
 
-   pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Cookies have been set"];
-   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    cookies = [NSArray arrayWithObjects:cookie, nil];
+    [storage setCookies:cookies forURL:url mainDocumentURL:nil];
+
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Cookies have been set"];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
  - (void)getCookieValue:(CDVInvokedUrlCommand*)command
@@ -142,7 +150,6 @@
     for (cookie in [storage cookies]) {
         [storage deleteCookie:cookie];
     }
-    [[NSUserDefaults standardUserDefaults] synchronize];
 
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
