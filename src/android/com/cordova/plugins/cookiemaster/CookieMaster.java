@@ -9,7 +9,6 @@ import org.json.JSONException;
 
 import android.util.Log;
 
-import org.apache.http.cookie.Cookie;
 import org.json.JSONStringer;
 
 import java.net.HttpCookie;
